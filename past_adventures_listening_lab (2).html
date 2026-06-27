@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Past Adventures Listening Lab</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- React & ReactDOM UMD CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  
+  <!-- Babel Standalone para compilar JSX en vivo en el navegador -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    @keyframes celebrationMove {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate3d(var(--speed-x), var(--speed-y), 0) scale(0.2);
+        opacity: 0;
+      }
+    }
+    .animate-celebrationMove {
+      animation: celebrationMove 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+    .animate-shake {
+      animation: shake 0.2s ease-in-out 2;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .animate-scaleUp {
+      animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+  <div id="root"></div>
+
+  <!-- El código React inicia aquí -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // ==========================================
+    // MOTOR DE SONIDOS (Efectos de Gamificación)
+    // ==========================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+      playClick() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.1);
+        } catch (e) {}
+      }
+      playSuccess() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.08, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.15);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.15);
+          });
+        } catch (e) {}
+      }
+      playFailure() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(now + 0.25);
+        } catch (e) {}
+      }
+      playBadge() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const now = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc1.frequency.setValueAtTime(440, now);
+          osc1.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+          osc2.frequency.setValueAtTime(554.37, now);
+          osc2.frequency.exponentialRampToValueAtTime(1108.73, now + 0.3);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc1.start();
+          osc2.start();
+          osc1.stop(now + 0.35);
+          osc2.stop(now + 0.35);
+        } catch (e) {}
+      }
+      playFanfare() {
+        if (this.muted) return;
+        this.init();
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [
+            { f: 523.25, d: 0.15 }, // C5
+            { f: 523.25, d: 0.15 }, // C5
+            { f: 523.25, d: 0.15 }, // C5
+            { f: 659.25, d: 0.3 },  // E5
+            { f: 587.33, d: 0.15 }, // D5
+            { f: 659.25, d: 0.15 }, // E5
+            { f: 783.99, d: 0.45 }, // G5
+          ];
+          let cumulativeTime = now;
+          notes.forEach((note) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(note.f, cumulativeTime);
+            gain.gain.setValueAtTime(0.05, cumulativeTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, cumulativeTime + note.d);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(cumulativeTime);
+            osc.stop(cumulativeTime + note.d);
+            cumulativeTime += note.d * 0.95;
+          });
+        } catch (e) {}
+      }
+    }
+
+    const sfx = new SoundEngine();
+
+    function App() {
+      // ==========================================
+      // DECLARACIÓN DE ESTADOS
+      // ==========================================
+      const [deviceView, setDeviceView] = useState('desktop'); // desktop, tablet, mobile
+      const [currentScreen, setCurrentScreen] = useState('home'); // home, pre-listening, while-listening, post-listening, dashboard
+      const [activeTab, setActiveTab] = useState(1); // sub-activity tabs
+      const [muted, setMuted] = useState(false);
+      const [highContrast, setHighContrast] = useState(false);
+      const [fontSize, setFontSize] = useState('normal'); // small, normal, large
+
+      // Estadísticas e insignias del usuario
+      const [userScore, setUserScore] = useState(() => {
+        const saved = localStorage.getItem('listening_lab_score');
+        return saved ? parseInt(saved, 10) : 0;
+      });
+      const [unlockedBadges, setUnlockedBadges] = useState(() => {
+        const saved = localStorage.getItem('listening_lab_badges');
+        return saved ? JSON.parse(saved) : [];
+      });
+      const [streakCount, setStreakCount] = useState(3);
+      const [completedActivities, setCompletedActivities] = useState({});
+      const [celebrationBadge, setCelebrationBadge] = useState(null);
+
+      // Estados de Celebración Final
+      const [showFinalCelebration, setShowFinalCelebration] = useState(false);
+      const [celebrationParticles, setCelebrationParticles] = useState([]);
+      const [finalFeedbackData, setFinalFeedbackData] = useState(null);
+
+      // SECCIÓN 1: PRE-LISTENING
+      const [matchedVocabulary, setMatchedVocabulary] = useState({});
+      const [draggedItem, setDraggedItem] = useState(null);
+      const [predictions, setPredictions] = useState({
+        sunny: false,
+        unexpected: false,
+        lost: false,
+        animal: false,
+      });
+      const [predictionsLocked, setPredictionsLocked] = useState(false);
+
+      // SECCIÓN 2: WHILE-LISTENING (Reproducción estricta de Audio.mpeg)
+      const [audioSource, setAudioSource] = useState("Audio.mpeg"); // Pista principal de audio local
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [playbackSpeed, setPlaybackSpeed] = useState(1);
+      const [currentTimelineTime, setCurrentTimelineTime] = useState(0);
+      const [duration, setDuration] = useState(48); // Duración cargada de Audio.mpeg
+      const [keywordsCaught, setKeywordsCaught] = useState({});
+
+      // Desafío de Ordenamiento Cronológico
+      const initialTimelineEvents = [
+        { id: 'evt-1', text: 'Max went to the mountains.', correctPos: 0 },
+        { id: 'evt-2', text: 'It started raining.', correctPos: 1 },
+        { id: 'evt-3', text: 'They ran back.', correctPos: 2 },
+        { id: 'evt-4', text: 'They entered a café.', correctPos: 3 },
+        { id: 'evt-5', text: 'They bought hot chocolate.', correctPos: 4 },
+        { id: 'evt-6', text: 'They talked for hours.', correctPos: 5 },
+      ];
+      const [timelineEvents, setTimelineEvents] = useState(() => {
+        return [...initialTimelineEvents].sort(() => Math.random() - 0.5);
+      });
+      const [timelineFeedback, setTimelineFeedback] = useState(null);
+
+      // Preguntas de Opción Múltiple
+      const mcqQuestions = [
+        {
+          id: 1,
+          q: "Where did Max go last weekend?",
+          options: ["To a beach resort", "To the mountains", "To a big city", "To a quiet forest"],
+          correct: 1,
+          selected: null,
+        },
+        {
+          id: 2,
+          q: "Why did Max and his brother run back?",
+          options: ["Because they saw a bear", "Because they lost their tickets", "Because it started raining", "Because they were cold"],
+          correct: 2,
+          selected: null,
+        },
+        {
+          id: 3,
+          q: "What did they buy?",
+          options: ["New rain coats", "A giant hot chocolate", "Sandwiches and coffee", "Souvenirs"],
+          correct: 1,
+          selected: null,
+        },
+        {
+          id: 4,
+          q: "What happened inside the café?",
+          options: ["They stayed warm and talked for hours", "They ordered lunch and left", "They got lost inside", "They met their parents"],
+          correct: 0,
+          selected: null,
+        },
+        {
+          id: 5,
+          q: "What advice did Leo give at the end?",
+          options: ["Always buy a spare jacket", "It is always best to stay safe and warm", "Don't go to the mountains in autumn", "Check the weather before you go to the mountains"],
+          correct: 3,
+          selected: null,
+        },
+      ];
+      const [listeningMissionQuestions, setListeningMissionQuestions] = useState(mcqQuestions);
+
+      // SECCIÓN 3: POST-LISTENING
+      const [reflectionAnswers, setReflectionAnswers] = useState({
+        easy: '',
+        difficult: '',
+        improve: '',
+      });
+      const [reflectionFeedback, setReflectionFeedback] = useState({});
+      const [reflectingSubmitting, setReflectingSubmitting] = useState(false);
+
+      // Juego de Detective del Lenguaje
+      const allWordCards = [
+        { text: 'started', type: 'regular' },
+        { text: 'talked', type: 'regular' },
+        { text: 'went', type: 'irregular' },
+        { text: 'bought', type: 'irregular' },
+        { text: 'first', type: 'connector' },
+        { text: 'suddenly', type: 'connector' },
+        { text: 'in the end', type: 'connector' },
+      ];
+      const [detectivePool, setDetectivePool] = useState(() => [...allWordCards].sort(() => Math.random() - 0.5));
+      const [detectiveClassified, setDetectiveClassified] = useState({
+        regular: [],
+        irregular: [],
+        connector: [],
+      });
+
+      // Escribe tu Propia Historia
+      const [adventureText, setAdventureText] = useState({
+        intro: '',
+        first: '',
+        suddenly: '',
+        end: '',
+      });
+      const [adventureFeedback, setAdventureFeedback] = useState(null);
+
+      // Referencia del tag de Audio HTML5
+      const audioRef = useRef(null);
+
+      // ==========================================
+      // DEFINICIONES DE DATOS CONSTANTES
+      // ==========================================
+      const vocabularyList = [
+        { id: 'v1', word: 'Last weekend', meaning: 'Refers to a past time', icon: '📅' },
+        { id: 'v2', word: 'Mountain', meaning: 'A very high natural elevation of land', icon: '🏔️' },
+        { id: 'v3', word: 'Jacket', meaning: 'A piece of clothing worn on the upper body', icon: '🧥' },
+        { id: 'v4', word: 'In the end', meaning: 'At the conclusion', icon: '🏁' },
+        { id: 'v5', word: 'Go', meaning: 'Went', icon: '🏃‍♂️' },
+        { id: 'v6', word: 'Café', meaning: 'A place where people drink coffee and eat snacks', icon: '☕' },
+        { id: 'v7', word: 'Lose', meaning: 'Lost', icon: '🗺️' },
+        { id: 'v8', word: 'First', meaning: 'The first event', icon: '1️⃣' },
+        { id: 'v9', word: 'Suddenly', meaning: 'An unexpected event happened', icon: '⚡' },
+        { id: 'v10', word: 'Buy', meaning: 'Bought', icon: '🛍️' },
+      ];
+
+      // Diálogos de la transcripción (Mostrados de forma exclusiva en Post-Listening)
+      const dialogueLines = [
+        { speaker: "Leo", text: "Hi Max! How was your weekend?", style: "Friendly and slow" },
+        { speaker: "Max", text: "Oh, hi Leo. Well... I had a very interesting experience last Saturday.", style: "Sighs slightly, speaking slowly" },
+        { speaker: "Leo", text: "Really? What happened?", style: "Curious" },
+        { speaker: "Max", text: "Last weekend, I went to the mountains with my brother. First, the weather was beautiful, so we started to walk up the mountain. Then, after one hour, it suddenly changed.", style: "Narrating carefully" },
+        { speaker: "Leo", text: "Oh no! Did it rain?", style: "Surprised" },
+        { speaker: "Max", text: "Yes, it did. It rained a lot! Suddenly, we realized we didn't have our jackets. We lost them in the car!", style: "Disappointed" },
+        { speaker: "Leo", text: "That sounds terrible! What did you do?", style: "Worried" },
+        { speaker: "Max", text: "Well, the rain didn't stop, so we decided to run back. We didn't see the beautiful view at the top, but in the end, we went to a café and bought a giant hot chocolate.", style: "Laughs softly" },
+        { speaker: "Leo", text: "That was a smart choice. I think a warm café is always better than a cold mountain!", style: "Smiling, cheerful" },
+        { speaker: "Max", text: "Yes, you are right! After that, we talked for hours in the café and we didn't think about the bad weather anymore.", style: "Smiles, speaking slowly" },
+        { speaker: "Leo", text: "That is true. Sometimes, a bad experience can turn into a good memory with a friend or brother.", style: "Thoughtful" },
+        { speaker: "Max", text: "Exactly. Finally, we drove back home in the evening, but we didn't feel sad because the hot chocolate was amazing!", style: "Nods in agreement" },
+        { speaker: "Leo", text: "I agree! Next time, please check the weather before you go to the mountains.", style: "Laughs gently" }
+      ];
+
+      const badgesData = [
+        { id: 'b-explorer', title: 'Story Explorer', description: 'Unlock this by matching all pre-listening vocabulary cards perfectly.', icon: '🥉', color: 'border-amber-600 bg-amber-50 text-amber-800' },
+        { id: 'b-detective', title: 'Listening Detective', description: 'Get all interactive listening mission MCQs correct on your first try.', icon: '🥈', color: 'border-slate-400 bg-slate-50 text-slate-800' },
+        { id: 'b-master', title: 'Narrative Master', description: 'Sort the timeline and classify verbs with flawless accuracy.', icon: '🥇', color: 'border-yellow-400 bg-yellow-50 text-yellow-800' },
+        { id: 'b-champion', title: 'A2 Adventure Champion', description: 'Complete the reflection and write your own story with a high grammar rating.', icon: '👑', color: 'border-purple-400 bg-purple-50 text-purple-800' },
+      ];
+
+      // ==========================================
+      // ESCUCHADORES DE EFECTOS
+      // ==========================================
+      useEffect(() => {
+        localStorage.setItem('listening_lab_score', userScore.toString());
+      }, [userScore]);
+
+      useEffect(() => {
+        localStorage.setItem('listening_lab_badges', JSON.stringify(unlockedBadges));
+      }, [unlockedBadges]);
+
+      useEffect(() => {
+        sfx.muted = muted;
+      }, [muted]);
+
+      // Sincronizar velocidad de reproducción con Audio nativo
+      useEffect(() => {
+        if (audioRef.current) {
+          audioRef.current.playbackRate = playbackSpeed;
+        }
+      }, [playbackSpeed, currentScreen]);
+
+      // Controlar estados de reproducción nativa de Audio.mpeg
+      useEffect(() => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+          audioRef.current.play().catch((err) => {
+            console.warn("MPEG audio playback blocked or failed.");
+            setIsPlaying(false);
+          });
+        } else {
+          audioRef.current.pause();
+        }
+      }, [isPlaying]);
+
+      // Pausar y resetear audio si cambiamos de pantalla
+      useEffect(() => {
+        if (currentScreen !== 'while-listening') {
+          setIsPlaying(false);
+          setCurrentTimelineTime(0);
+          if (audioRef.current) {
+            audioRef.current.pause();
+          }
+        }
+      }, [currentScreen]);
+
+      // Generar partículas para la ceremonia de finalización
+      useEffect(() => {
+        if (showFinalCelebration) {
+          const generated = Array.from({ length: 125 }).map((_, i) => ({
+            id: i,
+            x: Math.random() * 100,
+            y: Math.random() * 20 + 80,
+            color: ['#F59E0B', '#10B981', '#06B6D4', '#4F46E5', '#EC4899', '#8B5CF6'][Math.floor(Math.random() * 6)],
+            size: Math.random() * 8 + 4,
+            speedY: Math.random() * 4 + 2,
+            speedX: Math.random() * 3 - 1.5,
+            delay: Math.random() * 1.5,
+          }));
+          setCelebrationParticles(generated);
+        } else {
+          setCelebrationParticles([]);
+        }
+      }, [showFinalCelebration]);
+
+      const handleAudioProgressBarClick = (e) => {
+        if (!audioRef.current) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const ratio = clickX / rect.width;
+        const targetTime = ratio * duration;
+        audioRef.current.currentTime = targetTime;
+        setCurrentTimelineTime(targetTime);
+      };
+
+      // ==========================================
+      // ACCIONES DE GAMIFICACIÓN Y RECOMPENSAS
+      // ==========================================
+      const addScore = (amount) => {
+        setUserScore(prev => prev + amount);
+      };
+
+      const unlockBadge = (id) => {
+        if (!unlockedBadges.includes(id)) {
+          const updated = [...unlockedBadges, id];
+          setUnlockedBadges(updated);
+          const badge = badgesData.find(b => b.id === id);
+          setCelebrationBadge(badge);
+          sfx.playBadge();
+        }
+      };
+
+      // ==========================================
+      // EVALUACIONES Y GRADOS ADAPTATIVOS
+      // ==========================================
+      const handleFinalFinishAndCelebrate = () => {
+        sfx.playClick();
+        
+        const vocabAnswersCount = Object.keys(matchedVocabulary).length;
+        const vocabScore = Math.min(100, Math.round((vocabAnswersCount / vocabularyList.length) * 100));
+
+        const mcqCorrectCount = listeningMissionQuestions.filter(q => q.selected === q.correct).length;
+        const listeningScore = Math.min(100, Math.round((mcqCorrectCount / listeningMissionQuestions.length) * 100));
+
+        const timelineCorrect = timelineEvents.every((item, idx) => item.correctPos === idx) ? 100 : 50;
+        const detectivePoolLeft = detectivePool.length;
+        const totalDetectiveCards = allWordCards.length;
+        const detectiveScore = Math.min(100, Math.round(((totalDetectiveCards - detectivePoolLeft) / totalDetectiveCards) * 100));
+        const grammarScore = Math.round((timelineCorrect + detectiveScore) / 2);
+
+        const writingScore = adventureFeedback ? adventureFeedback.score : 0;
+
+        const overallScore = Math.round((vocabScore + listeningScore + grammarScore + writingScore) / 4);
+        const accuracyRate = Math.round((overallScore + vocabScore) / 2);
+        const finalCompletionPercentage = totalCompletedPercentage;
+
+        let performanceLevel = "";
+        let colorTheme = "";
+        let congratulationsMessage = "";
+
+        if (overallScore >= 90) {
+          performanceLevel = "🏆 Excellent Performance (90–100%)";
+          colorTheme = "from-amber-400 to-yellow-500";
+          congratulationsMessage = "Outstanding work! You demonstrated excellent listening comprehension and a strong understanding of narrative tenses. Keep challenging yourself with more English adventures!";
+        } else if (overallScore >= 80) {
+          performanceLevel = "🥇 Very Good Performance (80–89%)";
+          colorTheme = "from-cyan-400 to-blue-500";
+          congratulationsMessage = "Great job! You understood most of the story and used narrative language effectively. Keep practicing to become a Narrative Master!";
+        } else if (overallScore >= 70) {
+          performanceLevel = "🥈 Good Performance (70–79%)";
+          colorTheme = "from-emerald-400 to-teal-500";
+          congratulationsMessage = "Well done! You are making solid progress. Review the vocabulary and listen to the story again to improve your confidence and accuracy.";
+        } else if (overallScore >= 60) {
+          performanceLevel = "🥉 Developing Performance (60–69%)";
+          colorTheme = "from-orange-400 to-amber-500";
+          congratulationsMessage = "Good effort! You completed the lesson successfully. Focus on listening carefully to key details and practicing past tense verbs. Every lesson helps you improve!";
+        } else {
+          performanceLevel = "🌱 Needs More Practice (Below 60%)";
+          colorTheme = "from-rose-400 to-red-500";
+          congratulationsMessage = "Don’t give up! Learning English takes practice. Try listening to the story again, review the vocabulary, and complete the activities once more. You’re improving with every attempt!";
+        }
+
+        const categoryScoresList = [
+          { name: 'Listening', score: listeningScore, recs: ["Listen to the audio one more time at 0.75× speed.", "Pay attention to key words and sequence markers in Section 2."] },
+          { name: 'Vocabulary', score: vocabScore, recs: ["Review the vocabulary cards before listening again.", "Practice matching words with their meanings in Section 1."] },
+          { name: 'Grammar', score: grammarScore, recs: ["Review regular and irregular past verbs listed in Section 3.", "Practice using connectors such as 'First', 'Suddenly', and 'In the end' to write transition sentences."] },
+          { name: 'Writing', score: writingScore, recs: ["Try writing another short story using the provided template.", "Check your past tense verbs before submitting the story."] }
+        ];
+
+        categoryScoresList.sort((a, b) => a.score - b.score);
+        const weakestCategory = categoryScoresList[0];
+        const secondWeakestCategory = categoryScoresList[1];
+
+        const customizedRecommendations = [
+          ...weakestCategory.recs,
+          secondWeakestCategory.recs[0]
+        ];
+
+        sfx.playFanfare();
+        setFinalFeedbackData({
+          overallScore,
+          listeningScore,
+          vocabScore,
+          grammarScore,
+          writingScore,
+          accuracyRate,
+          finalCompletionPercentage,
+          performanceLevel,
+          colorTheme,
+          congratulationsMessage,
+          recommendations: customizedRecommendations
+        });
+
+        localStorage.setItem('listening_lab_score', (userScore + 50).toString());
+        addScore(50); // XP Completion rewards
+
+        setShowFinalCelebration(true);
+      };
+
+      // ==========================================
+      // ACCIONES INTERACTIVAS DE ACTIVIDADES
+      // ==========================================
+      const handleVocabMatch = (word, definition) => {
+        const vocab = vocabularyList.find(v => v.word === word);
+        if (vocab && vocab.meaning === definition) {
+          setMatchedVocabulary(prev => {
+            const next = { ...prev, [word]: true };
+            sfx.playSuccess();
+            addScore(10);
+            
+            if (Object.keys(next).length === vocabularyList.length) {
+              unlockBadge('b-explorer');
+              setCompletedActivities(curr => ({ ...curr, vocab: true }));
+            }
+            return next;
+          });
+        } else {
+          sfx.playFailure();
+        }
+      };
+
+      const handleTimelineShift = (index, dir) => {
+        sfx.playClick();
+        const updated = [...timelineEvents];
+        const targetIdx = index + dir;
+        if (targetIdx >= 0 && targetIdx < updated.length) {
+          const temp = updated[index];
+          updated[index] = updated[targetIdx];
+          updated[targetIdx] = temp;
+          setTimelineEvents(updated);
+        }
+      };
+
+      const verifyTimeline = () => {
+        const isCorrect = timelineEvents.every((item, idx) => item.correctPos === idx);
+        if (isCorrect) {
+          sfx.playSuccess();
+          setTimelineFeedback({ success: true, text: "Excellent sequencing! You earned +30 XP." });
+          addScore(30);
+          setCompletedActivities(curr => ({ ...curr, timeline: true }));
+          checkMasteryBadge();
+        } else {
+          sfx.playFailure();
+          setTimelineFeedback({ success: false, text: "The sequence is not quite right yet. Try shuffling again!" });
+        }
+      };
+
+      const handleSelectMCQ = (qId, optionIdx) => {
+        sfx.playClick();
+        setListeningMissionQuestions(prev => {
+          const updated = prev.map(q => q.id === qId ? { ...q, selected: optionIdx } : q);
+          const currentQ = updated.find(q => q.id === qId);
+          if (currentQ.correct === optionIdx) {
+            sfx.playSuccess();
+            addScore(20);
+          } else {
+            sfx.playFailure();
+          }
+          
+          const allDone = updated.every(q => q.selected !== null);
+          if (allDone) {
+            setCompletedActivities(curr => ({ ...curr, mcq: true }));
+            const allPerfect = updated.every(q => q.selected === q.correct);
+            if (allPerfect) {
+              unlockBadge('b-detective');
+            }
+          }
+          return updated;
+        });
+      };
+
+      const catchKeyword = (word) => {
+        if (keywordsCaught[word]) return;
+        sfx.playSuccess();
+        setKeywordsCaught(prev => {
+          const updated = { ...prev, [word]: true };
+          addScore(15);
+          return updated;
+        });
+      };
+
+      const classifyDetective = (wordObj, category) => {
+        if (wordObj.type === category) {
+          sfx.playSuccess();
+          addScore(20);
+          setDetectiveClassified(prev => ({
+            ...prev,
+            [category]: [...prev[category], wordObj.text]
+          }));
+          setDetectivePool(prev => prev.filter(w => w.text !== wordObj.text));
+          
+          if (detectivePool.length <= 1) {
+            setCompletedActivities(curr => ({ ...curr, detective: true }));
+            checkMasteryBadge();
+          }
+        } else {
+          sfx.playFailure();
+        }
+      };
+
+      const checkMasteryBadge = () => {
+        if (completedActivities.timeline && completedActivities.detective) {
+          unlockBadge('b-master');
+        }
+      };
+
+      const handleEvaluateReflection = () => {
+        sfx.playClick();
+        setReflectingSubmitting(true);
+        
+        setTimeout(() => {
+          const MathScoreEvaluatorResult = {};
+          let totalPassed = true;
+
+          Object.keys(reflectionAnswers).forEach(key => {
+            const text = reflectionAnswers[key].trim();
+            const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+            
+            if (wordCount < 30 || wordCount > 50) {
+              MathScoreEvaluatorResult[key] = {
+                success: false,
+                feedback: `Your response has ${wordCount} words. Please keep it within the 30 to 50 words boundary.`,
+                score: 40
+              };
+              totalPassed = false;
+            } else {
+              const hasPastMistake = /go\s|lose\s|started\snot/i.test(text);
+              const feedbackText = hasPastMistake 
+                ? "Great job! Your ideas are clear. Remember to use the past tense after 'Last weekend' (e.g., 'went' or 'lost')."
+                : "Excellent work! Clear syntax, appropriate narrative connectors, and accurate past simple verbs.";
+              
+              MathScoreEvaluatorResult[key] = {
+                success: true,
+                feedback: feedbackText,
+                score: hasPastMistake ? 75 : 95
+              };
+            }
+          });
+
+          setReflectionFeedback(MathScoreEvaluatorResult);
+          setReflectingSubmitting(false);
+          
+          if (totalPassed) {
+            addScore(10);
+            setCompletedActivities(curr => ({ ...curr, reflection: true }));
+            checkChampionBadge();
+          }
+        }, 900);
+      };
+
+      const handleEvaluateAdventure = () => {
+        sfx.playClick();
+        const { intro, first, suddenly, end } = adventureText;
+        if (!intro || !first || !suddenly || !end) {
+          setAdventureFeedback({
+            status: 'error',
+            message: 'Please complete all storyline fields before evaluating.',
+            score: 0
+          });
+          return;
+        }
+
+        let detectedIssues = [];
+        let score = 100;
+
+        if (!/ed\b|went|bought|was|had|ran|did/i.test(intro + ' ' + first)) {
+          detectedIssues.push("Missing strong past tense verbs (regular or irregular) in introduction.");
+          score -= 20;
+        }
+        if (!/suddenly|unexpected|first|then|next/i.test(suddenly)) {
+          detectedIssues.push("Could enrich descriptive connectors inside the climate peak.");
+          score -= 15;
+        }
+
+        const advice = detectedIssues.length > 0
+          ? `Good initial draft. Review suggestions: ${detectedIssues.join(' ')}`
+          : "Excellent narrative workflow! High quality, superb use of connectors, and flawless syntax.";
+
+        setAdventureFeedback({
+          status: 'success',
+          message: advice,
+          score: score
+        });
+
+        addScore(score > 80 ? 30 : 15);
+        setCompletedActivities(curr => ({ ...curr, adventure: true }));
+        checkChampionBadge();
+      };
+
+      const checkChampionBadge = () => {
+        if (completedActivities.reflection && completedActivities.adventure) {
+          unlockBadge('b-champion');
+        }
+      };
+
+      const totalCompletedPercentage = Math.round(
+        ((Object.keys(completedActivities).length) / 6) * 100
+      );
+
+      return (
+        <div className={`min-h-screen transition-all ${highContrast ? 'bg-slate-950 text-white' : 'bg-slate-900 text-slate-100'} p-3 md:p-6 font-sans relative overflow-hidden`}>
+          
+          {/* NATIVE HIDDEN AUDIO TAG WITH REACT REF */}
+          <audio
+            ref={audioRef}
+            src={audioSource}
+            preload="auto"
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onTimeUpdate={(e) => setCurrentTimelineTime(e.currentTarget.currentTime)}
+            onLoadedMetadata={(e) => {
+              setDuration(e.currentTarget.duration || 45);
+            }}
+            onEnded={() => {
+              setIsPlaying(false);
+              setCurrentTimelineTime(0);
+            }}
+          />
+
+          {/* FINAL CELEBRATION FLOATING PARTICLE FIREWORKS */}
+          {showFinalCelebration && (
+            <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+              {celebrationParticles.map((particle) => (
+                <div
+                  key={particle.id}
+                  className="absolute rounded-full animate-celebrationMove"
+                  style={{
+                    left: `${particle.x}%`,
+                    top: `${particle.y}%`,
+                    backgroundColor: particle.color,
+                    width: `${particle.size}px`,
+                    height: `${particle.size}px`,
+                    boxShadow: `0 0 12px ${particle.color}`,
+                    animationDelay: `${particle.delay}s`,
+                    '--speed-x': `${particle.speedX}px`,
+                    '--speed-y': `-${particle.speedY}px`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* DEVICE VIEWER CONTAINER */}
+          <div className="max-w-7xl mx-auto">
+            <header className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 border-b border-slate-700 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-tr from-indigo-500 to-cyan-500 p-2.5 rounded-xl shadow-lg">
+                  <span className="text-2xl">🏔️</span>
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-black tracking-tight">Past Adventures Listening Lab</h1>
+                  <p className="text-xs text-slate-400">Master Narrative Tenses & English Listening Comprehension (A2 Level)</p>
+                </div>
+              </div>
+
+              {/* Device switcher */}
+              <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 shadow-inner">
+                <button
+                  onClick={() => { sfx.playClick(); setDeviceView('mobile'); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${deviceView === 'mobile' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                  title="Preview App in Mobile viewport"
+                >
+                  <span>📱</span> Mobile View
+                </button>
+                <button
+                  onClick={() => { sfx.playClick(); setDeviceView('tablet'); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${deviceView === 'tablet' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                  title="Preview App in Tablet viewport"
+                >
+                  <span>📲</span> Tablet View
+                </button>
+                <button
+                  onClick={() => { sfx.playClick(); setDeviceView('desktop'); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${deviceView === 'desktop' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                  title="Preview App in Laptop/Desktop viewport"
+                >
+                  <span>💻</span> Desktop View
+                </button>
+              </div>
+            </header>
+
+            {/* DEVICE COMPARTMENT EMBEDDING */}
+            <div className="flex justify-center items-start overflow-auto py-2">
+              <div 
+                className={`transition-all duration-300 w-full rounded-2xl border-4 border-slate-800 bg-slate-950 p-1 shadow-2xl relative ${
+                  deviceView === 'mobile' ? 'max-w-sm min-h-[750px]' : 
+                  deviceView === 'tablet' ? 'max-w-2xl min-h-[900px]' : 
+                  'max-w-6xl min-h-[720px]'
+                }`}
+              >
+                {/* Embedded device status bar */}
+                <div className="flex justify-between items-center px-4 py-2 bg-slate-900 rounded-t-xl text-[10px] text-slate-500 border-b border-slate-800">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>EduSystem Online</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🔊 Playable Audio Configured</span>
+                    <span>🔋 100%</span>
+                  </div>
+                </div>
+
+                {/* MAIN APP SHELL */}
+                <div className={`p-4 md:p-6 min-h-[600px] rounded-b-xl bg-slate-900 transition-all ${fontSize === 'large' ? 'text-lg' : fontSize === 'small' ? 'text-sm' : 'text-base'}`}>
+                  
+                  {/* ACCESSIBILITY & STATS BAR */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-slate-800/60 p-3 rounded-xl border border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-slate-300">Level Streak:</span>
+                      <div className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1">
+                        🔥 {streakCount} Days
+                      </div>
+                      <div className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-xs font-bold">
+                        ✨ {userScore} XP
+                      </div>
+                    </div>
+                    
+                    {/* Sound, Theme, Font toggles */}
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => { sfx.playClick(); setMuted(!muted); }}
+                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition"
+                        title={muted ? 'Unmute Sounds' : 'Mute Sounds'}
+                      >
+                        {muted ? '🔇 Muted' : '🔊 Sound'}
+                      </button>
+                      <button 
+                        onClick={() => { sfx.playClick(); setHighContrast(!highContrast); }}
+                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition"
+                        title="Toggle Contrast Mode"
+                      >
+                        🌓 Theme
+                      </button>
+                      <button 
+                        onClick={() => {
+                          sfx.playClick();
+                          setFontSize(prev => prev === 'normal' ? 'large' : prev === 'large' ? 'small' : 'normal');
+                        }}
+                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition"
+                        title="Change Font Size"
+                      >
+                        🔤 Font
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* TAB NAVIGATION */}
+                  <nav className="flex flex-wrap justify-center md:justify-start gap-1.5 mb-6 border-b border-slate-800 pb-3">
+                    <button
+                      onClick={() => { sfx.playClick(); setCurrentScreen('home'); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${currentScreen === 'home' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                    >
+                      🏰 Lobby
+                    </button>
+                    <button
+                      onClick={() => { sfx.playClick(); setCurrentScreen('pre-listening'); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${currentScreen === 'pre-listening' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                    >
+                      🚀 1. Pre-Listening
+                    </button>
+                    <button
+                      onClick={() => { sfx.playClick(); setCurrentScreen('while-listening'); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${currentScreen === 'while-listening' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                    >
+                      🎧 2. While-Listening
+                    </button>
+                    <button
+                      onClick={() => { sfx.playClick(); setCurrentScreen('post-listening'); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${currentScreen === 'post-listening' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                    >
+                      📝 3. Post-Listening
+                    </button>
+                    <button
+                      onClick={() => { sfx.playClick(); setCurrentScreen('dashboard'); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${currentScreen === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                    >
+                      📊 Dashboard
+                    </button>
+                  </nav>
+
+                  {/* PROGRESS BAR */}
+                  <div className="mb-6">
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>Adventures Course Progress</span>
+                      <span>{totalCompletedPercentage}% Complete</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-indigo-500 to-cyan-500 h-full transition-all duration-500"
+                        style={{ width: `${totalCompletedPercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* SCREEN NAVIGATION */}
+
+                  {/* SCREEN: HOME */}
+                  {currentScreen === 'home' && (
+                    <div className="animate-fadeIn text-center max-w-lg mx-auto py-8 text-white">
+                      <div className="inline-block bg-indigo-500/10 p-4 rounded-full text-5xl mb-4 border border-indigo-500/20 animate-bounce">
+                        🎒
+                      </div>
+                      <h2 className="text-3xl font-black mb-2 bg-gradient-to-r from-indigo-400 to-cyan-300 bg-clip-text text-transparent">
+                        Past Adventures Listening Lab
+                      </h2>
+                      <p className="text-slate-300 mb-6 max-w-sm mx-auto text-sm">
+                        "Improve your listening skills through real-life stories."
+                      </p>
+
+                      <div className="space-y-3 mb-8">
+                        <button
+                          onClick={() => { sfx.playClick(); setCurrentScreen('pre-listening'); }}
+                          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition transform active:scale-95 text-sm animate-pulse"
+                        >
+                          ▶ Start Lesson Journey
+                        </button>
+                        <button
+                          onClick={() => { sfx.playClick(); setCurrentScreen('dashboard'); }}
+                          className="w-full bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-semibold py-2.5 px-6 rounded-xl transition text-sm"
+                        >
+                          📊 View My Progress
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-800 text-left">
+                        <h3 className="text-xs uppercase tracking-wider font-bold text-cyan-400 mb-2">My Unlocked Badges</h3>
+                        <div className="flex gap-2 flex-wrap">
+                          {unlockedBadges.length === 0 ? (
+                            <p className="text-xs text-slate-500 italic">No badges unlocked yet. Complete pre-listening vocabulary challenges to earn explorer badges!</p>
+                          ) : (
+                            unlockedBadges.map(bId => {
+                              const badge = badgesData.find(b => b.id === bId);
+                              return (
+                                <span key={bId} className="inline-flex items-center gap-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 px-2.5 py-1 rounded-lg text-xs" title={badge?.description}>
+                                  <span>{badge?.icon}</span> {badge?.title}
+                                </span>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SCREEN: PRE-LISTENING */}
+                  {currentScreen === 'pre-listening' && (
+                    <div className="animate-fadeIn space-y-6">
+                      {/* Sub activities tab */}
+                      <div className="flex border-b border-slate-800">
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(1); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 1 ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Challenge 1: Interactive Vocabulary Match
+                        </button>
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(2); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 2 ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Challenge 2: Story Prediction Scene
+                        </button>
+                      </div>
+
+                      {/* Vocabulary match activity */}
+                      {activeTab === 1 && (
+                        <div className="space-y-4">
+                          <div className="bg-cyan-500/10 border border-cyan-500/20 p-4 rounded-xl">
+                            <span className="text-cyan-400 text-xs font-bold uppercase block mb-1">Instruction</span>
+                            <p className="text-xs text-slate-300 text-left">
+                              Before listening to the audio, match each word or expression with its correct meaning or past form. These words and expressions will help you understand the story.
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                            {/* Column 1: Words */}
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Vocabulary Words</h4>
+                              <div className="grid grid-cols-2 gap-2">
+                                {vocabularyList.map(item => {
+                                  const isMatched = matchedVocabulary[item.word];
+                                  return (
+                                    <div
+                                      key={item.id}
+                                      draggable={!isMatched}
+                                      onDragStart={() => setDraggedItem(item.word)}
+                                      onClick={() => {
+                                        sfx.playClick();
+                                        setDraggedItem(item.word);
+                                      }}
+                                      className={`p-3 rounded-xl border flex items-center gap-2 cursor-pointer transition select-none ${
+                                        isMatched 
+                                          ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 pointer-events-none' 
+                                          : draggedItem === item.word 
+                                          ? 'bg-indigo-600 border-indigo-400 text-white animate-pulse'
+                                          : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                                      }`}
+                                    >
+                                      <span className="text-lg">{item.icon}</span>
+                                      <div className="text-xs font-bold truncate">{item.word}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <p className="text-[10px] text-slate-500 italic mt-1">Tap or drag a word card above, then tap its matching definition below.</p>
+                            </div>
+
+                            {/* Column 2: Meanings */}
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Meanings & Descriptions</h4>
+                              <div className="space-y-2">
+                                {vocabularyList.map(item => {
+                                  const correspondingWord = item.word;
+                                  const isMatched = matchedVocabulary[correspondingWord];
+
+                                  return (
+                                    <div
+                                      key={item.id + '-def'}
+                                      onDragOver={(e) => e.preventDefault()}
+                                      onDrop={() => {
+                                        if (draggedItem) {
+                                          handleVocabMatch(draggedItem, item.meaning);
+                                          setDraggedItem(null);
+                                        }
+                                      }}
+                                      onClick={() => {
+                                        if (draggedItem) {
+                                          handleVocabMatch(draggedItem, item.meaning);
+                                          setDraggedItem(null);
+                                        }
+                                      }}
+                                      className={`p-2.5 rounded-xl border text-xs transition cursor-pointer ${
+                                        isMatched
+                                          ? 'bg-emerald-500/10 border-emerald-500/30 text-slate-400 line-through'
+                                          : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200'
+                                      }`}
+                                    >
+                                      {item.meaning}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Predictions Activity */}
+                      {activeTab === 2 && (
+                        <div className="space-y-4">
+                          <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 h-48 flex items-center justify-center p-4">
+                            <svg className="absolute inset-0 w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M 0,160 L 120,90 L 260,150 L 380,80 L 520,160 L 640,110 L 800,160 L 800,200 L 0,200 Z" fill="#4F46E5" />
+                              <path d="M 0,180 L 220,120 L 440,170 L 660,130 L 800,180 L 800,200 L 0,200 Z" fill="#06B6D4" />
+                              <circle cx="500" cy="50" r="25" fill="#EAB308" />
+                            </svg>
+
+                            <div className="relative text-center z-10 max-w-md">
+                              <span className="text-3xl mb-1 block">🧗‍♂️</span>
+                              <h4 className="font-bold text-white text-sm">"What do you think happened during Max’s trip?"</h4>
+                              <p className="text-xs text-slate-400 mt-1">Make your hypothesis before taking off on the mountain listening journey.</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 text-left">
+                            <div className="text-xs font-bold text-slate-300">Select possible outcomes:</div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl cursor-pointer hover:bg-slate-850 transition">
+                                <input
+                                  type="checkbox"
+                                  disabled={predictionsLocked}
+                                  checked={predictions.sunny}
+                                  onChange={() => {
+                                    sfx.playClick();
+                                    setPredictions(p => ({ ...p, sunny: !p.sunny }));
+                                  }}
+                                  className="accent-indigo-500 h-4 w-4 rounded"
+                                />
+                                <span className="text-xs text-slate-200">It was sunny all day.</span>
+                              </label>
+
+                              <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl cursor-pointer hover:bg-slate-850 transition">
+                                <input
+                                  type="checkbox"
+                                  disabled={predictionsLocked}
+                                  checked={predictions.unexpected}
+                                  onChange={() => {
+                                    sfx.playClick();
+                                    setPredictions(p => ({ ...p, unexpected: !p.unexpected }));
+                                  }}
+                                  className="accent-indigo-500 h-4 w-4 rounded"
+                                />
+                                <span className="text-xs text-slate-200">Something unexpected happened.</span>
+                              </label>
+
+                              <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl cursor-pointer hover:bg-slate-850 transition">
+                                <input
+                                  type="checkbox"
+                                  disabled={predictionsLocked}
+                                  checked={predictions.lost}
+                                  onChange={() => {
+                                    sfx.playClick();
+                                    setPredictions(p => ({ ...p, lost: !p.lost }));
+                                  }}
+                                  className="accent-indigo-500 h-4 w-4 rounded"
+                                />
+                                <span className="text-xs text-slate-200">They got lost.</span>
+                              </label>
+
+                              <label className="flex items-center gap-3 p-3 bg-slate-900 rounded-xl cursor-pointer hover:bg-slate-850 transition">
+                                <input
+                                  type="checkbox"
+                                  disabled={predictionsLocked}
+                                  checked={predictions.animal}
+                                  onChange={() => {
+                                    sfx.playClick();
+                                    setPredictions(p => ({ ...p, animal: !p.animal }));
+                                  }}
+                                  className="accent-indigo-500 h-4 w-4 rounded"
+                                />
+                                <span className="text-xs text-slate-200">They met a wild mountain animal.</span>
+                              </label>
+                            </div>
+
+                            {!predictionsLocked ? (
+                              <button
+                                onClick={() => {
+                                  sfx.playSuccess();
+                                  setPredictionsLocked(true);
+                                  addScore(10);
+                                }}
+                                className="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-xs transition"
+                              >
+                                🔒 Lock Predictions (+10 XP Bonus)
+                              </button>
+                            ) : (
+                              <div className="text-center py-2 text-emerald-400 text-xs font-semibold">
+                                ✓ Hypotheses locked! Listen to the dialogue to see which ones turn out correct.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CONTINUOUS NAVIGATION ROW AT END OF STAGE */}
+                      <div className="bg-slate-800/80 p-4 rounded-xl border border-indigo-500/20 mt-6 flex flex-col items-center gap-3 text-center">
+                        <p className="text-xs text-slate-400">Ready to listen and test your knowledge?</p>
+                        <button
+                          onClick={() => {
+                            sfx.playClick();
+                            localStorage.setItem('listening_lab_score', userScore.toString());
+                            setCurrentScreen('while-listening');
+                            setActiveTab(1);
+                          }}
+                          className="w-full md:w-auto px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-black rounded-xl text-sm shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 animate-pulse"
+                        >
+                          ➡️ Continue to While-Listening
+                        </button>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2">
+                        <button 
+                          onClick={() => { sfx.playClick(); setCurrentScreen('home'); }}
+                          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
+                        >
+                          ← Back Home
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SCREEN: WHILE-LISTENING */}
+                  {currentScreen === 'while-listening' && (
+                    <div className="animate-fadeIn space-y-6">
+                      
+                      {/* CENTRAL HIGH QUALITY AUDIO PLAYER */}
+                      <div className="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-xl space-y-4 text-left">
+                        
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b border-slate-700">
+                          <div>
+                            <h3 className="text-xs font-bold text-cyan-400 tracking-wider uppercase">Past Adventures Audio Player</h3>
+                            <p className="text-[10px] text-slate-400">Current playback source: {audioSource}</p>
+                          </div>
+                        </div>
+
+                        {/* Audio Player Controls */}
+                        <div className="flex flex-col sm:flex-row items-center gap-4 py-2">
+                          <button
+                            onClick={() => {
+                              sfx.playClick();
+                              setIsPlaying(!isPlaying);
+                            }}
+                            className={`p-4 rounded-full text-white shadow-lg transition transform hover:scale-105 ${isPlaying ? 'bg-amber-600 hover:bg-amber-500' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+                            title={isPlaying ? "Pause" : "Play"}
+                          >
+                            {isPlaying ? (
+                              <span className="text-xl">⏸</span>
+                            ) : (
+                              <span className="text-xl pl-1">▶</span>
+                            )}
+                          </button>
+
+                          <div className="grow w-full space-y-1">
+                            {/* Audio timeline progress bar */}
+                            <div 
+                              className="h-2 bg-slate-950 rounded-full overflow-hidden relative cursor-pointer"
+                              onClick={handleAudioProgressBarClick}
+                            >
+                              <div 
+                                className="h-full bg-cyan-400 transition-all"
+                                style={{ width: `${(currentTimelineTime / duration) * 100}%` }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-between text-[10px] text-slate-500">
+                              <span>{Math.floor(currentTimelineTime)}s / {Math.round(duration)}s</span>
+                              <span>MPEG Audio Track Stream</span>
+                            </div>
+                          </div>
+
+                          {/* Playback speed controller */}
+                          <div className="flex gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-700">
+                            {['0.75x', '1x', '1.25x'].map(speed => {
+                              const val = parseFloat(speed);
+                              return (
+                                <button
+                                  key={speed}
+                                  onClick={() => {
+                                    sfx.playClick();
+                                    setPlaybackSpeed(val);
+                                  }}
+                                  className={`px-2 py-1 text-[10px] font-bold rounded ${playbackSpeed === val ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                  {speed}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* NOTE: Spoken transcript/highlight has been completely removed from this view to follow the strict requirement of NO TRANSCRIPT in the While-Listening section. */}
+                      </div>
+
+                      {/* SUB-ACTIVITIES MENU */}
+                      <div className="flex border-b border-slate-800 mt-6">
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(1); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 1 ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Mission 1: Multiple Choice
+                        </button>
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(2); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 2 ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Mission 2: Story Timeline Sequence
+                        </button>
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(3); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 3 ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Mission 3: Keyword Catch (+XP)
+                        </button>
+                      </div>
+
+                      {/* ACTIVE TAB VIEWS */}
+                      {activeTab === 1 && (
+                        <div className="space-y-4 text-left">
+                          {listeningMissionQuestions.map((q, idx) => (
+                            <div key={q.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+                              <div className="flex items-start gap-2.5">
+                                <span className="bg-slate-700 text-white font-extrabold w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                                  {idx + 1}
+                                </span>
+                                <p className="text-xs font-bold text-slate-100">{q.q}</p>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
+                                {q.options.map((opt, optIdx) => {
+                                  const isSelected = q.selected === optIdx;
+                                  const isCorrect = q.correct === optIdx;
+                                  return (
+                                    <button
+                                      key={optIdx}
+                                      onClick={() => handleSelectMCQ(q.id, optIdx)}
+                                      className={`p-2.5 rounded-lg border text-left text-xs transition ${
+                                        isSelected 
+                                          ? isCorrect 
+                                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' 
+                                            : 'bg-rose-500/20 border-rose-500 text-rose-300 animate-shake'
+                                          : 'bg-slate-900 hover:bg-slate-850 border-slate-800 text-slate-300'
+                                      }`}
+                                    >
+                                      {opt}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {activeTab === 2 && (
+                        <div className="space-y-4 bg-slate-800/40 p-4 rounded-xl border border-slate-800 text-left">
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Chronological Experience Timeline</h4>
+                            <p className="text-[10px] text-slate-400">Order the story events chronologically using the shifting arrow controls.</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            {timelineEvents.map((evt, idx) => (
+                              <div key={evt.id} className="bg-slate-900 border border-slate-700 rounded-xl p-3 flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-black text-indigo-400">#{idx + 1}</span>
+                                  <p className="text-xs text-slate-200 font-medium">{evt.text}</p>
+                                </div>
+                                <div className="flex gap-1">
+                                  <button 
+                                    onClick={() => handleTimelineShift(idx, -1)}
+                                    disabled={idx === 0}
+                                    className="p-1 rounded bg-slate-850 hover:bg-slate-750 disabled:opacity-30 text-xs"
+                                  >
+                                    🔼
+                                  </button>
+                                  <button 
+                                    onClick={() => handleTimelineShift(idx, 1)}
+                                    disabled={idx === timelineEvents.length - 1}
+                                    className="p-1 rounded bg-slate-850 hover:bg-slate-750 disabled:opacity-30 text-xs"
+                                  >
+                                    🔽
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <button
+                            onClick={verifyTimeline}
+                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-xs transition"
+                          >
+                            ✓ Validate Chronological Order
+                          </button>
+
+                          {timelineFeedback && (
+                            <div className={`p-3 rounded-lg text-xs font-semibold text-center ${timelineFeedback.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                              {timelineFeedback.text}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {activeTab === 3 && (
+                        <div className="space-y-4 bg-slate-800/40 p-4 rounded-xl border border-slate-800 text-left">
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Passive Listening Catcher</h4>
+                            <p className="text-[10px] text-slate-400">
+                              While listening to the audio above, look out for the pronunciation of these key vocabulary words and tap them immediately to score bonus XP points!
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2.5 justify-center py-4">
+                            {['suddenly', 'jacket', 'mountain', 'café', 'hot chocolate'].map(word => {
+                              const caught = keywordsCaught[word];
+                              return (
+                                <button
+                                  key={word}
+                                  onClick={() => catchKeyword(word)}
+                                  className={`px-4 py-2.5 rounded-full border text-xs font-bold transition transform active:scale-95 ${
+                                    caught 
+                                      ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg' 
+                                      : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
+                                  }`}
+                                >
+                                  🔔 {word.toUpperCase()} {caught && '✓ (+15 XP)'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CONTINUOUS NAVIGATION ROW */}
+                      <div className="bg-slate-800/80 p-4 rounded-xl border border-indigo-500/20 mt-6 flex flex-col items-center gap-3 text-center">
+                        <p className="text-xs text-slate-400 font-medium">Ready to reflect on what you heard and analyze narrative grammar?</p>
+                        <button
+                          onClick={() => {
+                            sfx.playClick();
+                            localStorage.setItem('listening_lab_score', userScore.toString());
+                            setCurrentScreen('post-listening');
+                            setActiveTab(1);
+                          }}
+                          className="w-full md:w-auto px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-black rounded-xl text-sm shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 animate-pulse"
+                        >
+                          ➡️ Continue to Post-Listening
+                        </button>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2">
+                        <button 
+                          onClick={() => { sfx.playClick(); setCurrentScreen('pre-listening'); }}
+                          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
+                        >
+                          ← Section 1: Pre-Listening
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SCREEN: POST-LISTENING */}
+                  {currentScreen === 'post-listening' && (
+                    <div className="animate-fadeIn space-y-6">
+
+                      {/* DIALOGUE TRANSCRIPT REFERENCE GUIDE (Strictly displayed at the beginning of Post-Listening only) */}
+                      <div className="bg-slate-800/95 p-5 rounded-2xl border border-slate-700 shadow-lg space-y-3 text-left">
+                        <div className="flex justify-between items-center border-b border-slate-700 pb-2">
+                          <h4 className="text-xs font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <span>📖</span> Story Transcript & Reference Guide
+                          </h4>
+                          <span className="text-[10px] bg-slate-750 px-2 py-0.5 rounded text-slate-400 font-semibold">Max & Leo Hiking Experience</span>
+                        </div>
+                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-900 max-h-52 overflow-y-auto space-y-3">
+                          {dialogueLines.map((line, idx) => {
+                            const isMax = line.speaker === "Max";
+                            return (
+                              <div 
+                                key={idx} 
+                                className="flex flex-col p-2 bg-slate-900/40 border border-slate-850 rounded-lg text-slate-300"
+                              >
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className={`text-[10px] font-extrabold tracking-wide uppercase ${isMax ? 'text-indigo-400' : 'text-cyan-400'}`}>
+                                    {line.speaker}
+                                  </span>
+                                  {line.style && (
+                                    <span className="text-[9px] text-slate-500 italic">({line.style})</span>
+                                  )}
+                                </div>
+                                <p className="text-xs leading-relaxed">{line.text}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      
+                      {/* Sub tabs navigation */}
+                      <div className="flex border-b border-slate-800">
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(1); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 1 ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Task 1: Reflection Cards
+                        </button>
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(2); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 2 ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Task 2: Language Detective
+                        </button>
+                        <button 
+                          onClick={() => { sfx.playClick(); setActiveTab(3); }}
+                          className={`py-2 px-4 font-bold text-xs border-b-2 transition ${activeTab === 3 ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-400'}`}
+                        >
+                          Task 3: Create Your Own Adventure
+                        </button>
+                      </div>
+
+                      {/* Task 1: Reflection Cards */}
+                      {activeTab === 1 && (
+                        <div className="space-y-4 text-left">
+                          <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
+                            <span className="text-yellow-400 text-xs font-bold uppercase block mb-1">Interactive Written Synthesis</span>
+                            <p className="text-xs text-slate-300">
+                              Answer the following questions about the listening experience. Your answer must be between <strong>30 and 50 words</strong> to pass grammar verification.
+                            </p>
+                          </div>
+
+                          {/* Question 1 */}
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+                            <label className="text-xs font-bold text-slate-200 block">1. Which part of the story was the easiest to understand?</label>
+                            <textarea
+                              placeholder="Write your answer in English (30 to 50 words)..."
+                              value={reflectionAnswers.easy}
+                              onChange={(e) => setReflectionAnswers(p => ({ ...p, easy: e.target.value }))}
+                              rows={3}
+                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white resize-none focus:border-indigo-500 outline-none"
+                            ></textarea>
+                            
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className={`${reflectionAnswers.easy.trim().split(/\s+/).filter(w => w.length > 0).length >= 30 && reflectionAnswers.easy.trim().split(/\s+/).filter(w => w.length > 0).length <= 50 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
+                                Word count: {reflectionAnswers.easy.trim().split(/\s+/).filter(w => w.length > 0).length}
+                              </span>
+                              {reflectionFeedback.easy && (
+                                <span className="text-yellow-400 font-semibold">Evaluation score: {reflectionFeedback.easy.score}%</span>
+                              )}
+                            </div>
+                            {reflectionFeedback.easy && (
+                              <p className="p-2 bg-slate-900 border border-slate-800 text-[11px] text-slate-300 rounded mt-1">{reflectionFeedback.easy.feedback}</p>
+                            )}
+                          </div>
+
+                          {/* Question 2 */}
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+                            <label className="text-xs font-bold text-slate-200 block">2. Which part was the most difficult?</label>
+                            <textarea
+                              placeholder="Write your answer in English (30 to 50 words)..."
+                              value={reflectionAnswers.difficult}
+                              onChange={(e) => setReflectionAnswers(p => ({ ...p, difficult: e.target.value }))}
+                              rows={3}
+                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white resize-none focus:border-indigo-500 outline-none"
+                            ></textarea>
+                            
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className={`${reflectionAnswers.difficult.trim().split(/\s+/).filter(w => w.length > 0).length >= 30 && reflectionAnswers.difficult.trim().split(/\s+/).filter(w => w.length > 0).length <= 50 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
+                                Word count: {reflectionAnswers.difficult.trim().split(/\s+/).filter(w => w.length > 0).length}
+                              </span>
+                              {reflectionFeedback.difficult && (
+                                <span className="text-yellow-400 font-semibold">Evaluation score: {reflectionFeedback.difficult.score}%</span>
+                              )}
+                            </div>
+                            {reflectionFeedback.difficult && (
+                              <p className="p-2 bg-slate-900 border border-slate-800 text-[11px] text-slate-300 rounded mt-1">{reflectionFeedback.difficult.feedback}</p>
+                            )}
+                          </div>
+
+                          {/* Question 3 */}
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2">
+                            <label className="text-xs font-bold text-slate-200 block">3. What can you do to improve your listening next time?</label>
+                            <textarea
+                              placeholder="Write your answer in English (30 to 50 words)..."
+                              value={reflectionAnswers.improve}
+                              onChange={(e) => setReflectionAnswers(p => ({ ...p, improve: e.target.value }))}
+                              rows={3}
+                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white resize-none focus:border-indigo-500 outline-none"
+                            ></textarea>
+                            
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className={`${reflectionAnswers.improve.trim().split(/\s+/).filter(w => w.length > 0).length >= 30 && reflectionAnswers.improve.trim().split(/\s+/).filter(w => w.length > 0).length <= 50 ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
+                                Word count: {reflectionAnswers.improve.trim().split(/\s+/).filter(w => w.length > 0).length}
+                              </span>
+                              {reflectionFeedback.improve && (
+                                <span className="text-yellow-400 font-semibold">Evaluation score: {reflectionFeedback.improve.score}%</span>
+                              )}
+                            </div>
+                            {reflectionFeedback.improve && (
+                              <p className="p-2 bg-slate-900 border border-slate-800 text-[11px] text-slate-300 rounded mt-1">{reflectionFeedback.improve.feedback}</p>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={handleEvaluateReflection}
+                            disabled={reflectingSubmitting}
+                            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-750 text-white font-bold py-3 rounded-xl text-xs transition animate-pulse"
+                          >
+                            {reflectingSubmitting ? "Running Realtime Grammar Evaluations..." : "Submit Answers for Evaluation"}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Task 2: Language Detective sorting game */}
+                      {activeTab === 2 && (
+                        <div className="space-y-4 text-left">
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wide">Syntactic Classifier Board</h4>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Drag & Drop or tap each vocabulary word to classify its appropriate syntactic nature.</p>
+                          </div>
+
+                          {/* Cards Pool */}
+                          <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                            <div className="text-[10px] uppercase font-bold text-slate-400 mb-2">Unclassified Pool</div>
+                            <div className="flex flex-wrap gap-2">
+                              {detectivePool.length === 0 ? (
+                                <p className="text-xs text-emerald-400 italic font-medium w-full text-center py-2">✓ Flawless classification completed!</p>
+                              ) : (
+                                detectivePool.map(card => (
+                                  <div
+                                    key={card.text}
+                                    onClick={() => {
+                                      sfx.playClick();
+                                      setDraggedItem(card);
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer select-none transition ${
+                                      draggedItem?.text === card.text 
+                                        ? 'bg-indigo-600 border-indigo-400 text-white animate-pulse'
+                                        : 'bg-slate-800 border-slate-700 hover:border-slate-600 text-slate-200'
+                                    }`}
+                                  >
+                                    {card.text}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Drop Targets */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {/* Target: Regular Past Verbs */}
+                            <div
+                              onClick={() => {
+                                if (draggedItem) {
+                                  classifyDetective(draggedItem, 'regular');
+                                  setDraggedItem(null);
+                                }
+                              }}
+                              className="bg-slate-800/80 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500 transition cursor-pointer min-h-[140px] flex flex-col justify-between"
+                            >
+                              <div>
+                                <span className="text-[10px] tracking-wider uppercase font-bold text-indigo-400">Regular Past Tenses</span>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {detectiveClassified.regular.map(item => (
+                                    <span key={item} className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded text-xs">
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-[10px] text-slate-500 italic mt-4 block text-center">Tap / Drop cards here</span>
+                            </div>
+
+                            {/* Target: Irregular Past Verbs */}
+                            <div
+                              onClick={() => {
+                                if (draggedItem) {
+                                  classifyDetective(draggedItem, 'irregular');
+                                  setDraggedItem(null);
+                                }
+                              }}
+                              className="bg-slate-800/80 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500 transition cursor-pointer min-h-[140px] flex flex-col justify-between"
+                            >
+                              <div>
+                                <span className="text-[10px] tracking-wider uppercase font-bold text-cyan-400">Irregular Past Tenses</span>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {detectiveClassified.irregular.map(item => (
+                                    <span key={item} className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded text-xs">
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-[10px] text-slate-500 italic mt-4 block text-center">Tap / Drop cards here</span>
+                            </div>
+
+                            {/* Target: Narrative Connectors */}
+                            <div
+                              onClick={() => {
+                                if (draggedItem) {
+                                  classifyDetective(draggedItem, 'connector');
+                                  setDraggedItem(null);
+                                }
+                              }}
+                              className="bg-slate-800/80 p-4 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500 transition cursor-pointer min-h-[140px] flex flex-col justify-between"
+                            >
+                              <div>
+                                <span className="text-[10px] tracking-wider uppercase font-bold text-amber-400">Narrative Connectors</span>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {detectiveClassified.connector.map(item => (
+                                    <span key={item} className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded text-xs">
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-[10px] text-slate-500 italic mt-4 block text-center">Tap / Drop cards here</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Task 3: Create Your Own Adventure */}
+                      {activeTab === 3 && (
+                        <div className="space-y-4 text-left">
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wide">Write Your Own Mini Mountain Expedition</h4>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Fill in the story blanks using the target past-tense grammar features evaluated by the platform.</p>
+                          </div>
+
+                          <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            {/* Sentence 1 */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs text-slate-300 font-bold whitespace-nowrap">Last weekend, I</span>
+                              <input
+                                type="text"
+                                placeholder="e.g. went hiking up the mountain cliffs"
+                                value={adventureText.intro}
+                                onChange={(e) => setAdventureText(p => ({ ...p, intro: e.target.value }))}
+                                className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 grow focus:border-indigo-500 outline-none"
+                              />
+                            </div>
+
+                            {/* Sentence 2 */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs text-slate-300 font-bold whitespace-nowrap">First, I</span>
+                              <input
+                                type="text"
+                                placeholder="e.g. checked the coordinates and wore my heavy coat"
+                                value={adventureText.first}
+                                onChange={(e) => setAdventureText(p => ({ ...p, first: e.target.value }))}
+                                className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 grow focus:border-indigo-500 outline-none"
+                              />
+                            </div>
+
+                            {/* Sentence 3 */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs text-slate-300 font-bold whitespace-nowrap">Suddenly,</span>
+                              <input
+                                type="text"
+                                placeholder="e.g. a strong wind blew and it started snowing intensely"
+                                value={adventureText.suddenly}
+                                onChange={(e) => setAdventureText(p => ({ ...p, suddenly: e.target.value }))}
+                                className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 grow focus:border-indigo-500 outline-none"
+                              />
+                            </div>
+
+                            {/* Sentence 4 */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs text-slate-300 font-bold whitespace-nowrap">In the end,</span>
+                              <input
+                                type="text"
+                                placeholder="e.g. we entered a secure warm lodge and felt better"
+                                value={adventureText.end}
+                                onChange={(e) => setAdventureText(p => ({ ...p, end: e.target.value }))}
+                                className="bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-200 grow focus:border-indigo-500 outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={handleEvaluateAdventure}
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-xs transition"
+                          >
+                            ⚡ Run Advanced Syntax & Connector Review
+                          </button>
+
+                          {adventureFeedback && (
+                            <div className={`p-4 rounded-xl border text-xs space-y-1.5 ${adventureFeedback.status === 'success' ? 'bg-indigo-950/40 border-indigo-500/40 text-slate-200' : 'bg-rose-950/40 border-rose-500/40 text-rose-300'}`}>
+                              <div className="flex justify-between font-bold">
+                                <span>Analysis Output:</span>
+                                <span>Grammar Rating Score: {adventureFeedback.score}%</span>
+                              </div>
+                              <p>{adventureFeedback.message}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* PROMINENT FINISH AND RESULTS NAVIGATION BUTTON */}
+                      <div className="bg-slate-800 p-5 rounded-2xl border border-indigo-500/40 mt-8 text-center space-y-3 shadow-xl">
+                        <span className="text-3xl animate-bounce block">✨</span>
+                        <h4 className="text-sm font-black text-white">All Narrative Adventures Fully Handled?</h4>
+                        <p className="text-xs text-slate-400">Calculate your grades, check grammar parameters, and unlock adventure ranks.</p>
+                        <button
+                          onClick={handleFinalFinishAndCelebrate}
+                          className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-extrabold rounded-2xl text-sm tracking-wide shadow-2xl transition transform hover:scale-105 active:scale-95"
+                        >
+                          🎉 Finish Lesson & View My Results
+                        </button>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2">
+                        <button 
+                          onClick={() => { sfx.playClick(); setCurrentScreen('while-listening'); }}
+                          className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg text-xs"
+                        >
+                          ← Section 2: While-Listening
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SCREEN: DASHBOARD */}
+                  {currentScreen === 'dashboard' && (
+                    <div className="animate-fadeIn space-y-6">
+                      
+                      {/* METRIC BOXES GRID */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 text-center">
+                          <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-1">XP Balance</span>
+                          <span className="text-2xl font-black text-indigo-400">{userScore} XP</span>
+                        </div>
+
+                        <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 text-center">
+                          <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-1">Badges Earned</span>
+                          <span className="text-2xl font-black text-cyan-400">{unlockedBadges.length} / 4</span>
+                        </div>
+
+                        <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 text-center">
+                          <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-1">Level Streak</span>
+                          <span className="text-2xl font-black text-amber-400">🔥 {streakCount} Days</span>
+                        </div>
+
+                        <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 text-center">
+                          <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-1">Progress Rate</span>
+                          <span className="text-2xl font-black text-emerald-400">{totalCompletedPercentage}%</span>
+                        </div>
+                      </div>
+
+                      {/* ADVENTURE BADGES EARNED SHOWCASE */}
+                      <div className="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 space-y-4 text-left">
+                        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-widest">Adventure Badges Status</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {badgesData.map(badge => {
+                            const isUnlocked = unlockedBadges.includes(badge.id);
+                            return (
+                              <div 
+                                key={badge.id}
+                                className={`p-3.5 rounded-xl border flex items-start gap-3 transition-all ${
+                                  isUnlocked 
+                                    ? `${badge.color} shadow-md`
+                                    : 'bg-slate-900/60 border-slate-800/50 opacity-40'
+                                }`}
+                              >
+                                <span className="text-3xl">{badge.icon}</span>
+                                <div>
+                                  <h5 className="font-bold text-xs">{badge.title}</h5>
+                                  <p className="text-[10px] mt-0.5 leading-relaxed">{badge.description}</p>
+                                  <span className="text-[9px] uppercase tracking-wider font-extrabold mt-1.5 inline-block">
+                                    {isUnlocked ? '✓ Unlocked' : '🔒 Locked'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* RESET UTILITY ACTION */}
+                      <div className="text-center pt-4">
+                        <button
+                          onClick={() => {
+                            sfx.playClick();
+                            if (confirm('Are you sure you want to reset all progress and start fresh?')) {
+                              setUserScore(0);
+                              setUnlockedBadges([]);
+                              setCompletedActivities({});
+                              setMatchedVocabulary({});
+                              setPredictions({
+                                sunny: false,
+                                unexpected: false,
+                                lost: false,
+                                animal: false,
+                              });
+                              setPredictionsLocked(false);
+                              setKeywordsCaught({});
+                              setTimelineEvents([...initialTimelineEvents].sort(() => Math.random() - 0.5));
+                              setTimelineFeedback(null);
+                              setListeningMissionQuestions(mcqQuestions);
+                              setReflectionAnswers({ easy: '', difficult: '', improve: '' });
+                              setReflectionFeedback({});
+                              setDetectivePool([...allWordCards].sort(() => Math.random() - 0.5));
+                              setDetectiveClassified({ regular: [], irregular: [], connector: [] });
+                              setAdventureText({ intro: '', first: '', suddenly: '', end: '' });
+                              setAdventureFeedback(null);
+                              setCurrentScreen('home');
+                            }
+                          }}
+                          className="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-500/20 text-rose-300 rounded-lg text-xs"
+                        >
+                          🔄 Reset Course Progress
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CELEBRATION MODAL WITH ADAPTIVE RATINGS */}
+                  {showFinalCelebration && finalFeedbackData && (
+                    <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+                      <div className="bg-slate-900 border-2 border-indigo-500 max-w-lg w-full rounded-2xl p-6 text-center shadow-2xl relative animate-scaleUp my-8 text-white">
+                        
+                        {/* Floating badge */}
+                        <div className="text-6xl mb-3 animate-bounce">🏆</div>
+                        
+                        {/* Performance banner */}
+                        <div className={`inline-block bg-gradient-to-r ${finalFeedbackData.colorTheme} text-slate-950 font-black px-4 py-1.5 rounded-full text-xs tracking-wider uppercase mb-3`}>
+                          {finalFeedbackData.performanceLevel}
+                        </div>
+
+                        <h3 className="text-xl font-black">Past Adventures Laboratory Complete</h3>
+                        
+                        {/* Adaptive Feedback */}
+                        <p className="text-xs text-slate-300 mt-3 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                      🎉 Congratulations! You have successfully completed the “Past Adventures Listening Lab.” {finalFeedbackData.congratulationsMessage}
+                        </p>
+
+                        {/* Breakdown Scores */}
+                        <div className="grid grid-cols-2 gap-2 mt-4 text-left">
+                          <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-[9px] text-slate-400 block font-bold">TOTAL SCORE:</span>
+                            <span className="text-sm font-black text-indigo-400">{finalFeedbackData.overallScore}%</span>
+                          </div>
+                          <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-[9px] text-slate-400 block font-bold">LISTENING RANK:</span>
+                            <span className="text-sm font-black text-cyan-400">{finalFeedbackData.listeningScore}%</span>
+                          </div>
+                          <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-[9px] text-slate-400 block font-bold">VOCAB COMPLIANCE:</span>
+                            <span className="text-sm font-black text-amber-400">{finalFeedbackData.vocabScore}%</span>
+                          </div>
+                          <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-[9px] text-slate-400 block font-bold">GRAMMAR & NARRATIVE:</span>
+                            <span className="text-sm font-black text-emerald-400">{finalFeedbackData.grammarScore}%</span>
+                          </div>
+                          <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-[9px] text-slate-400 block font-bold">WRITING ACCURACY:</span>
+                            <span className="text-sm font-black text-purple-400">{finalFeedbackData.writingScore}%</span>
+                          </div>
+                          <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-[9px] text-slate-400 block font-bold">COMPLETION RATE:</span>
+                            <span className="text-sm font-black text-pink-400">{finalFeedbackData.finalCompletionPercentage}%</span>
+                          </div>
+                        </div>
+
+                        {/* Recommendations */}
+                        <div className="mt-4 bg-indigo-950/20 p-4 rounded-xl border border-indigo-500/20 text-left">
+                          <h4 className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                            <span>💡</span> Tailored Recommendations for You:
+                          </h4>
+                          <ul className="space-y-1.5 list-disc list-inside text-xs text-slate-300">
+                            {finalFeedbackData.recs ? finalFeedbackData.recs.map((rec, i) => (
+                              <li key={i} className="leading-relaxed">{rec}</li>
+                            )) : finalFeedbackData.recommendations.map((rec, i) => (
+                              <li key={i} className="leading-relaxed">{rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            sfx.playClick();
+                            setShowFinalCelebration(false);
+                            setCurrentScreen('dashboard');
+                          }}
+                          className="mt-6 w-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-slate-950 font-black py-3 rounded-xl text-xs transition"
+                        >
+                          🚀 Return to Dashboard Summary
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CELEBRATION BADGE MODAL / OVERLAY */}
+                  {celebrationBadge && (
+                    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <div className="bg-slate-900 border-2 border-indigo-500 max-w-sm w-full rounded-2xl p-6 text-center shadow-2xl relative animate-scaleUp text-white">
+                        <div className="text-6xl mb-4 animate-bounce">{celebrationBadge.icon}</div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400">Badge Earned!</span>
+                        <h3 className="text-xl font-black mt-1">{celebrationBadge.title}</h3>
+                        <p className="text-xs text-slate-300 mt-2 leading-relaxed">{celebrationBadge.description}</p>
+                        
+                        <button
+                          onClick={() => {
+                            sfx.playClick();
+                            setCelebrationBadge(null);
+                          }}
+                          className="mt-6 w-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-slate-950 font-black py-2 rounded-lg text-xs transition"
+                        >
+                          Awesome! Continue Adventure
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
